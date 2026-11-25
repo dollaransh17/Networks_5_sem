@@ -1,0 +1,5 @@
+# Versions compatible with the serialized CNS 2022 release artifacts.
+numpy>=2,<3
+scikit-learn==1.6.1
+xgboost==3.4.1
+torch>=2.6,<3

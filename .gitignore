@@ -1,0 +1,69 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+ryu_venv/
+venv/
+env/
+.venv/
+
+# ── Trained model binaries (large; re-train with experiments/train_models.py) ─
+ai/models/*.pkl
+ai/models/*.pt
+ai/models/*.pth
+
+# ── Datasets & Large Archives (auto-downloaded/cached at runtime) ────────────
+data/*.zip
+data/*.csv
+data/extracted/
+cns2022_data/
+*.zip
+*.tar.gz
+
+# ── Cryptographic keys (NEVER commit private keys) ───────────────────────────
+audit/keys/
+*.pem
+*.key
+
+# ── Audit runtime data ────────────────────────────────────────────────────────
+audit/spool/*.db
+audit/spool/*.jsonl
+audit/spool/sealed_bundles/
+incident_store.db
+
+# ── Suricata / Mininet runtime logs ──────────────────────────────────────────
+*.log
+/tmp/
+
+# ── Secrets & environment ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.secret
+
+# ── Private Paper Draft (Kept local & private for Overleaf submission) ───────
+paper_manuscript/
+*.aux
+*.bbl
+*.blg
+*.out
+*.synctex.gz
+
+# ── IDE / OS artefacts ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local console Three.js dependency
+frontend/node_modules/
+

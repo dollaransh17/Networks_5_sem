@@ -1,0 +1,12 @@
+# sensors/suricata/local.rules
+#
+# Custom Suricata Signatures for SDN Threat Isolation Lab
+# References: PRD (Section 5, Stage 3), AGENTS.md, ARCHITECTURE.md
+#
+# Rule 1: Inline DROP rule for known test attack pattern
+# Detects malicious test HTTP payloads targeting the protected server (198.51.100.20)
+drop http 192.0.2.0/24 any -> 198.51.100.20 any (msg:"THREAT_ISOLATION_MALICIOUS_PAYLOAD_DETECTED"; content:"ATTACK_SIGNATURE_ALPHA"; nocase; http_uri; classtype:attempted-admin; sid:1000001; rev:1;)
+
+# Rule 2: Alert-only rule for reconnaissance / unusual port scans
+alert tcp 192.0.2.0/24 any -> 198.51.100.20 8080 (msg:"THREAT_ISOLATION_SUSPICIOUS_RECON"; flags:S; classtype:attempted-recon; sid:1000002; rev:1;)
+

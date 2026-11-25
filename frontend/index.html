@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SDN Threat Isolation</title>
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="traffic.js"></script>
+  <script defer src="topology.js"></script>
+  <script defer src="app.js"></script>
+  <script defer src="live_lab.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to main content</a>
+  <header class="site-header">
+    <div class="shell header-layout">
+      <a class="brand" href="#overview">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>SDN Isolation<small>Lab console</small></span>
+      </a>
+      <nav aria-label="Console">
+        <a href="#overview" aria-current="page"><span class="icon icon-grid" aria-hidden="true"></span>Overview</a>
+        <a href="#live-lab"><span class="icon icon-packets" aria-hidden="true"></span>Live lab</a>
+        <a href="#simulations"><span class="icon icon-wave" aria-hidden="true"></span>Simulations</a>
+      </nav>
+      <span id="service-status" class="service-status" data-state="pending" role="status">Connecting</span>
+    </div>
+  </header>
+
+  <main class="shell" id="content" tabindex="-1">
+    <section id="overview-page" aria-labelledby="overview-title">
+      <div class="page-heading">
+        <div>
+          <h1 id="overview-title">Network overview</h1>
+          <p>Monitor recorded activity and inspect the lab’s packet path.</p>
+        </div>
+        <button type="button" class="secondary" id="refresh" aria-label="Refresh audit activity"><span class="icon icon-rotate" aria-hidden="true"></span>Refresh</button>
+      </div>
+      <section class="panel packet-panel" aria-labelledby="overview-capture-title">
+        <h2 id="overview-capture-title">Live packet rate</h2>
+        <p id="overview-capture-status">Waiting for switch capture.</p>
+        <figure class="polling-chart capture-chart" id="overview-capture-figure" hidden>
+          <canvas id="overview-capture-chart" aria-hidden="true"></canvas>
+          <figcaption class="chart-axis" id="overview-capture-range"></figcaption>
+        </figure>
+      </section>
+      <section class="audit-monitor" aria-labelledby="audit-title">
+        <div class="audit-toolbar">
+          <div>
+            <h2 id="audit-title">Audit activity</h2>
+            <p id="audit-status" role="status">Connecting to the local store…</p>
+          </div>
+          <div class="audit-controls">
+            <span class="monitor-status" id="audit-mode" data-state="waiting" hidden></span>
+            <button type="button" class="secondary" id="audit-demo">Simulate audit</button>
+          </div>
+        </div>
+        <div id="audit-visuals" hidden>
+          <div class="monitor-grid">
+            <section class="audit-timeline" aria-labelledby="audit-trend-title">
+              <div class="trend-header">
+                <div><h3 id="audit-trend-title">Events in the last hour</h3><p>Five-minute intervals</p></div>
+                <strong id="audit-window-total" class="window-total"></strong>
+              </div>
+              <div class="audit-chart" id="audit-bars" role="group" aria-label="Event counts by five-minute interval"></div>
+              <div class="audit-chart-axis" aria-hidden="true"><span id="audit-window-start"></span><span id="audit-window-end"></span></div>
+              <p class="audit-chart-detail" id="audit-chart-detail"></p>
+            </section>
+            <section class="audit-sources" aria-labelledby="audit-sources-title">
+              <h3 id="audit-sources-title">Events by source</h3>
+              <ul id="audit-source-list"></ul>
+              <p id="audit-sources-empty" class="audit-chart-detail" hidden>No events recorded in this window.</p>
+            </section>
+          </div>
+        </div>
+      </section>
+      <dl class="summary" aria-label="Audit totals">
+        <div><dt><span class="icon icon-grid" aria-hidden="true"></span>Incidents</dt><dd data-count="incidents">—</dd></div>
+        <div><dt><span class="icon icon-wave" aria-hidden="true"></span>Recorded events</dt><dd data-count="events">—</dd></div>
+        <div><dt><span class="icon icon-check" aria-hidden="true"></span>Recorded actions</dt><dd data-count="actions">—</dd></div>
+      </dl>
+      <section class="network-panel" aria-labelledby="topology-title">
+        <div class="topology-toolbar">
+          <div class="topology-heading">
+            <h2 id="topology-title">Lab topology</h2>
+            <span id="topology-mode">Diagram view</span>
+          </div>
+          <div id="topology-tools">
+            <button id="topology-rotate" type="button" aria-label="Rotate topology view"><span class="icon icon-rotate" aria-hidden="true"></span>Rotate</button>
+            <button id="topology-reset" type="button">Reset view</button>
+          </div>
+        </div>
+        <div class="network-grid">
+          <div class="topology">
+            <div class="topology-stage" id="topology-stage">
+              <div class="topology-diagram" aria-hidden="true">
+                <i class="device-client"></i><i class="device-gateway"></i><i class="device-sensor"></i>
+                <i class="device-switch"></i><i class="device-server"></i>
+              </div>
+            </div>
+            <p class="topology-legend">Animated dots illustrate packet flow</p>
+            <div class="topology-nodes" role="group" aria-label="Inspect a network component">
+              <button type="button" aria-pressed="false" data-node="0"><strong>Client</strong><small>Sends traffic</small></button>
+              <button type="button" aria-pressed="false" data-node="1"><strong>Gateway</strong><small>Checks access</small></button>
+              <button type="button" aria-pressed="false" data-node="2"><strong>Suricata</strong><small>Inspects traffic</small></button>
+              <button type="button" aria-pressed="false" data-node="3"><strong>Open vSwitch</strong><small>Forwards traffic</small></button>
+              <button type="button" aria-pressed="false" data-node="4"><strong>Protected server</strong><small>Receives traffic</small></button>
+            </div>
+          </div>
+          <aside class="component-detail" aria-label="Topology details">
+            <div aria-live="polite" aria-atomic="true">
+              <h3 id="node-title">Packet path</h3>
+              <p id="node-description">The gateway checks access, Suricata inspects permitted traffic, and Open vSwitch forwards it to the protected server.</p>
+            </div>
+            <a class="text-link" href="#live-lab">Inspect live packets <span aria-hidden="true">→</span></a>
+          </aside>
+        </div>
+      </section>
+      <div class="overview-grid">
+        <section class="panel" aria-labelledby="incidents-title">
+          <div class="panel-heading">
+            <h3 id="incidents-title">Recent incidents</h3>
+            <select id="incident-filter" aria-label="Filter incidents by status" disabled>
+              <option value="">All statuses</option>
+              <option value="open">Open</option>
+              <option value="contained">Contained</option>
+              <option value="reverted">Reverted</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          <p class="empty" id="incidents-empty" role="status">Loading incidents…</p>
+          <div id="incident-table" class="table-scroll" tabindex="0" aria-label="Recent incidents table" hidden>
+            <table>
+              <thead><tr><th scope="col">Incident</th><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Opened</th></tr></thead>
+              <tbody id="incident-rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="events-title">
+          <div class="panel-heading"><h3 id="events-title">Recent activity</h3></div>
+          <p class="empty" id="events-empty" role="status">Loading activity…</p>
+          <ul class="activity" id="events" hidden></ul>
+        </section>
+      </div>
+    </section>
+
+    <section id="live-lab-page" aria-labelledby="live-lab-title" hidden>
+      <div class="page-heading">
+        <div>
+          <h1 id="live-lab-title">Live lab</h1>
+          <p>Inspect service health and packet headers on the lab switch.</p>
+        </div>
+        <time class="lab-check-time" id="lab-checked-at" hidden></time>
+      </div>
+      <section aria-label="Lab service status">
+        <h2 class="lab-services-title">Service checks</h2>
+        <ul class="lab-services" id="lab-services">
+          <li data-service="ryu"><h3>Ryu</h3><span>Checking</span><p></p></li>
+          <li data-service="mininet"><h3>Mininet</h3><span>Checking</span><p></p></li>
+          <li data-service="ovs"><h3>Open vSwitch</h3><span>Checking</span><p></p></li>
+          <li data-service="suricata"><h3>Suricata</h3><span>Checking</span><p></p></li>
+        </ul>
+      </section>
+      <section class="panel packet-panel" aria-labelledby="capture-title">
+        <div class="panel-heading">
+          <div><h2 id="capture-title">Packet capture</h2><p id="capture-message" role="status">Checking for a lab collector…</p></div>
+          <div class="capture-controls">
+            <span class="source-tag" id="capture-interface" hidden></span>
+            <button class="secondary" id="capture-pause" type="button" hidden>Pause display</button>
+          </div>
+        </div>
+        <div id="capture-content" hidden>
+          <dl class="simulation-metrics" aria-label="Capture measurements">
+            <div><dt>Packets per second</dt><dd id="capture-rate">—</dd></div>
+            <div><dt>Throughput (Mb/s)</dt><dd id="capture-throughput">—</dd></div>
+            <div><dt>Kernel drops in window</dt><dd id="capture-drops">—</dd></div>
+          </dl>
+          <figure class="polling-chart capture-chart">
+            <figcaption>Received packets per second</figcaption>
+            <canvas id="capture-chart" aria-hidden="true"></canvas>
+            <p class="chart-axis" id="capture-range"></p>
+          </figure>
+          <div class="capture-heading"><h3>Recent packet headers</h3><span id="capture-omitted"></span></div>
+          <p id="capture-empty" class="empty">Waiting for packets on this interface.</p>
+          <div id="capture-table" class="table-scroll capture-table" tabindex="0" aria-label="Captured packet headers" hidden>
+            <table>
+              <thead><tr><th scope="col">Time</th><th scope="col">Source</th><th scope="col">Destination</th><th scope="col">Protocol</th><th scope="col">Bytes</th></tr></thead>
+              <tbody id="capture-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section class="panel packet-panel" aria-labelledby="capture-ai-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="capture-ai-title">AI verification</h2>
+            <p>Reviews the last 10 capture intervals from three model-inspired perspectives: XGBoost, Bi-LSTM, and Isolation Forest.</p>
+          </div>
+          <button id="capture-ai-check" type="button" disabled>Verify latest capture</button>
+        </div>
+        <p id="capture-ai-live">Waiting for capture intervals.</p>
+        <p id="capture-ai-status" role="status">Waiting for live capture and AI verification.</p>
+        <div id="capture-ai-result" hidden>
+          <p id="capture-ai-measurements"></p>
+          <div id="capture-ai-summary"></div>
+        </div>
+      </section>
+      <figure class="signal-board" id="capture-path">
+        <figcaption>
+          <h2>Switch packet path</h2>
+          <p>Configured Mininet topology</p>
+        </figcaption>
+        <ol class="signal-path" aria-label="Packet path from the gateway to the switch destinations">
+          <li class="signal-stage">
+            <div class="signal-node"><span class="signal-port" aria-hidden="true"></span><strong>Gateway</strong><code>gw</code></div>
+          </li>
+          <li class="signal-stage">
+            <div class="signal-node"><span class="signal-port" aria-hidden="true"></span><strong>Suricata</strong><code>ips</code></div>
+            <span class="signal-link" data-port="s1-eth1">s1-eth1</span>
+          </li>
+          <li class="signal-stage">
+            <div class="signal-node signal-switch"><span class="signal-port" aria-hidden="true"></span><strong>Open vSwitch</strong><code>s1</code></div>
+          </li>
+          <li class="signal-destinations">
+            <ul aria-label="Switch destinations">
+              <li class="signal-node" data-port="s1-eth2"><strong>Protected server</strong><code>s1-eth2</code></li>
+              <li class="signal-node" data-port="s1-eth3"><strong>Quarantine</strong><code>s1-eth3</code></li>
+            </ul>
+          </li>
+        </ol>
+      </figure>
+      <div id="live-room-slot"></div>
+    </section>
+
+    <section id="simulations-page" aria-labelledby="simulation-title" hidden>
+      <div class="page-heading">
+        <div>
+          <h1 id="simulation-title">Server simulations</h1>
+          <p>Change the traffic load, route packets, and inspect the gateway queue.</p>
+        </div>
+      </div>
+      <div id="simulation-room-slot">
+        <section id="server-room" class="server-room" aria-labelledby="room-title">
+          <header class="room-toolbar">
+            <div class="room-title"><h2 id="room-title">3D server room</h2><span id="room-source-label">Synthetic traffic</span></div>
+          </header>
+          <div class="room-layout">
+            <div class="room-viewport" id="room-viewport" role="group" aria-label="Interactive 3D server room">
+              <div class="room-world" id="room-world" aria-hidden="true">
+                <div class="room-floor"></div>
+              </div>
+              <div class="room-camera" aria-label="Camera controls">
+                <button type="button" data-camera="left" aria-label="Orbit left">↶</button>
+                <button type="button" data-camera="right" aria-label="Orbit right">↷</button>
+                <button type="button" data-camera="reset">Reset view</button>
+              </div>
+            </div>
+            <aside class="room-inspector">
+              <label for="room-target" id="room-target-label">Route new packets to</label>
+              <select id="room-target"><option value="server">Protected server</option><option value="quarantine">Quarantine host</option></select>
+              <dl class="room-readings" id="room-sim-readings">
+                <div><dt>Delivered packets</dt><dd id="room-delivered">0</dd></div>
+                <div><dt>Protected server</dt><dd id="room-server-count">0</dd></div>
+                <div><dt>Quarantine host</dt><dd id="room-quarantine-count">0</dd></div>
+                <div><dt>Gateway queue</dt><dd id="room-queued">0</dd></div>
+                <div><dt>In flight</dt><dd id="room-in-flight">0</dd></div>
+                <div><dt>Dropped</dt><dd id="room-dropped">0</dd></div>
+              </dl>
+              <dl class="room-readings" id="room-capture-readings" hidden>
+                <div><dt>Captured rate</dt><dd><span id="room-capture-rate">—</span> <small>pkt/s</small></dd></div>
+                <div><dt>Observed port</dt><dd id="room-capture-port">—</dd></div>
+                <div><dt>Packets in interval</dt><dd id="room-capture-count">—</dd></div>
+              </dl>
+              <label for="room-device">Inspect device</label>
+              <select id="room-device"></select>
+              <p id="room-device-detail"></p>
+            </aside>
+          </div>
+          <p id="room-capture-status" role="status" hidden></p>
+          <div class="room-inputs" id="room-inputs" role="group" aria-label="Traffic controls">
+            <label for="room-load">Input rate</label>
+            <select id="room-load">
+              <option value="0">Manual · 0 pkt/s</option>
+              <option value="2">Light · 2 pkt/s</option>
+              <option value="5" selected>Steady · 5 pkt/s</option>
+              <option value="20">Heavy · 20 pkt/s</option>
+            </select>
+            <button type="button" id="room-burst">Send 20 packets</button>
+            <span>Gateway capacity 10 pkt/s · Queue limit 80</span>
+          </div>
+          <div class="check-grid room-flow-check" id="room-flow-check">
+            <section class="panel" aria-labelledby="measurements-title">
+              <h2 id="measurements-title">Custom traffic</h2>
+              <form id="flow-form">
+                <div class="fields">
+                  <label>Packets<input name="packet_count" type="number" min="1" max="10000" step="1" required></label>
+                  <label>Packet size <span>bytes</span><input name="avg_packet_size" type="number" min="1" max="65535" step="1" required></label>
+                  <label>Measurement window <span>seconds</span><input name="flow_duration_sec" type="number" min="0.001" max="3600" step="any" required></label>
+                </div>
+                <label><input id="auto-quarantine" type="checkbox" checked> Quarantine</label>
+                <p id="burst-route" role="status"></p>
+                <div class="form-actions">
+                  <button id="submit-check" type="submit" disabled>Send burst and check models</button>
+                  <button class="secondary" id="fill-example" type="button">Use example</button>
+                </div>
+                <p id="form-error" class="form-error" role="alert" hidden></p>
+              </form>
+            </section>
+            <section class="panel results-panel" aria-labelledby="results-title">
+              <h2 id="results-title">Model results</h2>
+              <p id="result-message" class="result-message" role="status">Send a custom burst to compare model predictions.</p>
+              <ul id="results" class="results" aria-label="Model results"></ul>
+              <div id="simulation-storage" hidden>
+                <div class="form-actions">
+                  <button id="save-simulation" class="secondary" type="button" disabled>Save burst to S3</button>
+                  <a id="simulation-s3-link" target="_blank" rel="noopener noreferrer" hidden>Open in S3</a>
+                </div>
+                <p id="simulation-save-status" role="status"></p>
+                <details id="simulation-json" hidden open>
+                  <summary>Stored JSON</summary>
+                  <pre id="simulation-json-text"></pre>
+                </details>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+      <div class="simulation-comparison">
+        <section class="panel simulation-report" aria-labelledby="report-title">
+          <div class="report-heading">
+            <div>
+              <h2 id="report-title">Polling benchmark</h2>
+              <p id="simulation-status" role="status">Loading scenarios…</p>
+            </div>
+            <span id="scenario-duration" class="source-tag" hidden></span>
+          </div>
+          <form id="simulation-form" class="room-scenarios">
+              <label for="scenarios">Benchmark workload</label>
+              <select id="scenarios" name="scenario" disabled></select>
+              <button type="submit" id="run-simulation" disabled>Compare polling</button>
+              <button type="button" id="retry-scenarios" class="secondary" hidden>Retry</button>
+            </form>
+          <p id="simulation-error" class="form-error" role="alert" hidden></p>
+          <div id="simulation-output" hidden>
+            <dl class="simulation-metrics" aria-label="Comparison totals">
+              <div><dt>Fixed polls</dt><dd id="fixed-polls"></dd></div>
+              <div><dt>Adaptive polls</dt><dd id="adaptive-polls"></dd></div>
+              <div><dt>Backoff cycles</dt><dd id="backpressure-cycles"></dd></div>
+            </dl>
+            <figure class="polling-chart">
+              <div class="chart-heading">
+                <figcaption><label class="chart-metric">Chart <select id="chart-metric">
+                  <option value="wait">Polling interval</option>
+                  <option value="rate">Packet rate</option>
+                  <option value="latency">Reply latency</option>
+                </select></label></figcaption>
+                <ul class="chart-legend">
+                  <li class="legend-adaptive">Adaptive</li>
+                  <li class="legend-fixed">Fixed</li>
+                </ul>
+              </div>
+              <div id="chart-frame"><canvas id="polling-chart" aria-hidden="true"></canvas></div>
+              <p class="chart-axis" id="chart-axis">Elapsed simulation time · wait in seconds</p>
+            </figure>
+            <p id="simulation-finding" class="simulation-finding"></p>
+            <details class="simulation-details">
+              <summary>Poll by poll</summary>
+              <label class="step-filter">Strategy <select id="step-filter"><option value="">Both strategies</option><option value="fixed">Fixed</option><option value="adaptive">Adaptive</option></select></label>
+              <div class="table-scroll" tabindex="0" aria-label="Simulated polling observations">
+                <table>
+                  <thead><tr><th scope="col">Sample</th><th scope="col">Strategy</th><th scope="col">Reply RTT</th><th scope="col">Rate (pkt/s)</th><th scope="col">Next wait</th><th scope="col">State</th></tr></thead>
+                  <tbody id="simulation-rows"></tbody>
+                </table>
+              </div>
+              <p>Each strategy samples the same workload on its own schedule. Rate calculations use successive snapshots. The next wait starts when the reply arrives.</p>
+            </details>
+          </div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>
